@@ -181,6 +181,29 @@ namespace Pomodoro
             ChartValues<double> chartValues = new ChartValues<double> { 5, 3, 2, 4, 5 };
             string[] arr = new string[] { "1", "2", "3", "4", "5" };
             Diagramm(chartValues, arr);
+
+            string path = "userForDiagramm.txt";
+            using FileStream fs = File.OpenRead(path);
+            using StreamReader sr = new StreamReader(fs);
+
+            string line;
+            string user = "";
+            while ((line = sr.ReadLine()!) != null)
+            {
+                user += line;
+            }
+
+            using (SqlConnection connection = new SqlConnection(connStrDiagramm))
+            {
+                string queryId = $"SELECT Id FROM Users Where Login = '{user}'";
+                int userId = connection.ExecuteScalar<int>(queryId);
+
+                string queryHours = $"SELECT sum(WorkTime) as SUM FROM Tasks Where UserId = {userId}";
+                int hours = connection.ExecuteScalar<int>(queryHours);
+                lblHours.Text = string.Format("{0:0.0}", hours/60);
+                lblDays.Text = string.Format("{0:0.0}", (hours/60)/24);
+            }
+
         }
 
         private void Diagramm(ChartValues<double> chartValues, string[] arr)
