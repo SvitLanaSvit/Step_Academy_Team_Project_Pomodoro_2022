@@ -11,15 +11,19 @@ using Microsoft.Data.SqlClient;
 using Dapper;
 using Microsoft.VisualBasic;
 using System.Text.Json;
+using static System.Environment;
 
 namespace Pomodoro
 {
     public partial class FormMain : Form
     {
+        private readonly string dataFolderPath = Path.Combine(GetFolderPath(SpecialFolder.MyDocuments), "Pomodoro Project Data Folder");
+        private readonly string loginDocPath;
+
         public FormMain()
         {
             InitializeComponent();
-            loginDocPath = "loginData.json";
+            loginDocPath = Path.Combine(dataFolderPath, "loginData.json");
         }
 
         //Timer------------------------------------------------------------------------------
@@ -31,13 +35,29 @@ namespace Pomodoro
         SoundPlayer player = new SoundPlayer(path);
         internal MyUser currentUser = new();
         internal Settings currentSetings;
-        string loginDocPath;
+
+        private void DataFolderEnsureCreated()
+        {
+            try
+            {
+                if (!Directory.Exists(dataFolderPath))
+                {
+                    Directory.CreateDirectory(dataFolderPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Data folder creating error:{NewLine}{ex.Message}{NewLine}");
+            }
+        }
+
 
         private void FormMain_Load(object sender, EventArgs e)
         {
             StartDB();
             //CheckDB();
             //CreateForDB();
+            DataFolderEnsureCreated();
 
             try
             {
@@ -63,7 +83,7 @@ namespace Pomodoro
                         using (MyPomodoroProjectContext context = new(options))
                         {
                             context.Users.Load();
-                            
+
                             foreach (var item in context.Users)
                             {
                                 if (item.Login == loginData.Login && item.Password == loginData.Password)
@@ -75,7 +95,7 @@ namespace Pomodoro
                                         context2.PomodoroSettings.Load();
                                         currentSetings = context2.PomodoroSettings.First(t => t.UserId == currentUser.Id);
                                     }
-                                   
+
                                     //this.currentSetings = currentUser.Settings;
                                     break;
                                 }
@@ -383,7 +403,7 @@ namespace Pomodoro
             //using (MyPomodoroProjectContext context = new MyPomodoroProjectContext(options))
             //{
             //    MyUser user = new MyUser { Login = "try", Password = "try", SecretAnswer = "try", SecretAsk = "try" };
-                
+
             //    MyUser user1 = new MyUser { Login = "Log", Password = "Pas", SecretAnswer = "Ans", SecretAsk = "Ask" };
             //    context.Users.AddRange(user1, user);
             //     await context.SaveChangesAsync();
