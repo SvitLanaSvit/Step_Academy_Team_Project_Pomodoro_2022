@@ -72,16 +72,29 @@ namespace Pomodoro
                 string[] arrayOfDate = connection.Query<string>(queryData).ToArray();
 
                 ChartValues<double> chartValues = new ChartValues<double>();
-                for (int i = 0; i < arrayOfCount.Length; i++)
-                {
-                    chartValues.Add(arrayOfCount[i]);
-                }
                 string[] arr = new string[arrayOfCount.Length];
-                for (int i = 0; i < arr.Length; i++)
+                if (arrayOfCount.Length == 1) 
                 {
-                    arr[i] = (i + 1).ToString();
+                    string[] arrOne = new string[arrayOfCount.Length + 1];
+                    chartValues.Add(0);
+                    chartValues.Add(arrayOfCount[0]);
+
+                    arrOne[0] = "0";
+                    arrOne[1] = "1";
                 }
-                
+                else
+                {
+                    for (int i = 0; i < arrayOfCount.Length; i++)
+                    {
+                        chartValues.Add(arrayOfCount[i]);
+                    }
+
+                    for (int i = 0; i < arr.Length; i++)
+                    {
+                        arr[i] = (i + 1).ToString();
+                    }
+                }
+                 
                 DiagrammDay(chartValues, arr);
             }
         }
@@ -178,10 +191,15 @@ namespace Pomodoro
 
         private void FormReport_Load(object sender, EventArgs e)
         {
-            ChartValues<double> chartValues = new ChartValues<double> { 5, 3, 2, 4, 5 };
-            string[] arr = new string[] { "1", "2", "3", "4", "5" };
-            Diagramm(chartValues, arr);
+            //ChartValues<double> chartValues = new ChartValues<double> { 5, 3, 2, 4, 5 };
+            //string[] arr = new string[] { "1", "2", "3", "4", "5" };
+            //Diagramm(chartValues, arr);
 
+            cartesianChart1.Series.Clear();
+            cartesianChart1.AxisX.Clear();
+            cartesianChart1.AxisY.Clear();
+
+            //diagramm
             string path = "userForDiagramm.txt";
             using FileStream fs = File.OpenRead(path);
             using StreamReader sr = new StreamReader(fs);
@@ -195,13 +213,53 @@ namespace Pomodoro
 
             using (SqlConnection connection = new SqlConnection(connStrDiagramm))
             {
+                var dateNow = DateTime.Now;
+
+                string queryId = $"SELECT Id FROM Users Where Login = '{user}'";
+                int userId = connection.ExecuteScalar<int>(queryId);
+
+                string queryCount = $"SELECT WorkTime FROM Tasks Where UserId = {userId} and TaskState = 'Finished' and DateOfFinish = '{dateNow.ToString("dd/MM/yyyy")}'";
+                int[] arrayOfCount = connection.Query<int>(queryCount).ToArray();
+
+                string queryData = $"SELECT DateOfFinish FROM Tasks Where UserId = {userId} and TaskState = 'Finished' and DateOfFinish = '{dateNow.ToString("dd/MM/yyyy")}'";
+                string[] arrayOfDate = connection.Query<string>(queryData).ToArray();
+
+                ChartValues<double> chartValues = new ChartValues<double>();
+                string[] arr = new string[arrayOfCount.Length];
+                if (arrayOfCount.Length == 1)
+                {
+                    string[] arrOne = new string[arrayOfCount.Length + 1];
+                    chartValues.Add(0);
+                    chartValues.Add(arrayOfCount[0]);
+
+                    arrOne[0] = "0";
+                    arrOne[1] = "1";
+                }
+                else
+                {
+                    for (int i = 0; i < arrayOfCount.Length; i++)
+                    {
+                        chartValues.Add(arrayOfCount[i]);
+                    }
+
+                    for (int i = 0; i < arr.Length; i++)
+                    {
+                        arr[i] = (i + 1).ToString();
+                    }
+                }
+
+                DiagrammDay(chartValues, arr);
+            }
+
+            using (SqlConnection connection = new SqlConnection(connStrDiagramm))
+            {
                 string queryId = $"SELECT Id FROM Users Where Login = '{user}'";
                 int userId = connection.ExecuteScalar<int>(queryId);
 
                 string queryHours = $"SELECT sum(WorkTime) as SUM FROM Tasks Where UserId = {userId}";
-                int hours = connection.ExecuteScalar<int>(queryHours);
-                lblHours.Text = string.Format("{0:0.0}", hours/60);
-                lblDays.Text = string.Format("{0:0.0}", (hours/60)/24);
+                double hours = connection.ExecuteScalar<int>(queryHours);
+                lblHours.Text = string.Format("{0:0.0}",(double) (hours/60));
+                lblDays.Text = string.Format("{0:0.0}", (double)((hours/60)/24));
             }
 
         }
